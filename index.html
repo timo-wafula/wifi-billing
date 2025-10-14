@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Billing - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            padding: 20px;
+        }
+        .container { 
+            width: 100%; 
+            max-width: 400px; 
+        }
+        .login-box { 
+            background: white; 
+            border-radius: 10px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            padding: 30px; 
+            text-align: center; 
+        }
+        .header { margin-bottom: 30px; }
+        .header h2 { color: #333; margin-bottom: 10px; }
+        .header p { color: #666; }
+        .packages { 
+            display: grid; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+        }
+        .package { 
+            background: #f8f9fa; 
+            border: 2px solid #e9ecef; 
+            border-radius: 8px; 
+            padding: 15px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .package:hover { 
+            border-color: #007bff; 
+            background: #e7f3ff; 
+        }
+        .package.selected { 
+            border-color: #007bff; 
+            background: #007bff; 
+            color: white; 
+        }
+        .form-group { 
+            margin-bottom: 20px; 
+            text-align: left; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            color: #333; 
+            font-weight: bold; 
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #e9ecef; 
+            border-radius: 5px; 
+            font-size: 16px; 
+        }
+        .btn-pay { 
+            width: 100%; 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: background 0.3s ease; 
+        }
+        .btn-pay:hover { background: #218838; }
+        .selected-package { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 20px; 
+        }
+        .hidden { display: none; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <div class="header">
+                <h2>Welcome to Our WiFi</h2>
+                <p>Select a package to continue</p>
+            </div>
+            
+            <div class="packages">
+                <div class="package" data-price="5" data-duration="1">
+                    <h3>5 KES</h3>
+                    <p>1 Hour Access</p>
+                </div>
+                <div class="package" data-price="10" data-duration="4">
+                    <h3>10 KES</h3>
+                    <p>4 Hours Access</p>
+                </div>
+                <div class="package" data-price="20" data-duration="12">
+                    <h3>20 KES</h3>
+                    <p>12 Hours Access</p>
+                </div>
+                <div class="package" data-price="30" data-duration="24">
+                    <h3>30 KES</h3>
+                    <p>24 Hours Access</p>
+                </div>
+                <div class="package" data-price="180" data-duration="168">
+                    <h3>180 KES</h3>
+                    <p>7 Days Access</p>
+                </div>
+            </div>
+
+            <div class="payment-form hidden">
+                <h3>M-Pesa Payment</h3>
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label for="phone">M-Pesa Phone Number:</label>
+                        <input type="tel" id="phone" name="phone" placeholder="07XXXXXXXX" required>
+                    </div>
+                    <div class="selected-package">
+                        <p>Package: <span id="selectedPackage">-</span></p>
+                        <p>Amount: KES <span id="selectedAmount">0</span></p>
+                    </div>
+                    <button type="submit" class="btn-pay">Pay with M-Pesa</button>
+                </form>
+            </div>
+
+            <div class="payment-status hidden">
+                <div class="status-message">
+                    <h3>Processing Payment</h3>
+                    <div class="loader"></div>
+                    <p>Check your phone for M-Pesa prompt</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WiFiBilling {
+            constructor() {
+                this.selectedPackage = null;
+                this.mac = this.getParameter('mac') || this.generateMockMac();
+                this.ip = this.getParameter('ip') || '192.168.100.100';
+                this.init();
+            }
+
+            getParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            }
+
+            generateMockMac() {
+                return 'AA:BB:CC:' + Array.from({length: 6}, () => 
+                    Math.floor(Math.random() * 16).toString(16)).join(':').toUpperCase();
+            }
+
+            init() {
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                document.querySelectorAll('.package').forEach(pkg => {
+                    pkg.addEventListener('click', () => this.selectPackage(pkg));
+                });
+
+                document.getElementById('paymentForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.processPayment();
+                });
+            }
+
+            selectPackage(pkg) {
+                document.querySelectorAll('.package').forEach(p => p.classList.remove('selected'));
+                pkg.classList.add('selected');
+                
+                this.selectedPackage = {
+                    price: pkg.dataset.price,
+                    duration: pkg.dataset.duration
+                };
+
+                document.getElementById('selectedPackage').textContent = 
+                    `${pkg.dataset.price} KES - ${this.getDurationText(pkg.dataset.duration)}`;
+                document.getElementById('selectedAmount').textContent = pkg.dataset.price;
+
+                document.querySelector('.packages').classList.add('hidden');
+                document.querySelector('.payment-form').classList.remove('hidden');
+            }
+
+            getDurationText(duration) {
+                const hours = parseInt(duration);
+                if (hours === 1) return '1 Hour';
+                if (hours === 168) return '7 Days';
+                if (hours <= 24) return `${hours} Hours`;
+                return `${hours / 24} Days`;
+            }
+
+            async processPayment() {
+                const phone = document.getElementById('phone').value;
+                
+                if (!this.validatePhone(phone)) {
+                    alert('Please enter a valid M-Pesa phone number (07XXXXXXXX)');
+                    return;
+                }
+
+                document.querySelector('.payment-form').classList.add('hidden');
+                document.querySelector('.payment-status').classList.remove('hidden');
+
+                try {
+                    const paymentData = {
+                        phone: phone,
+                        amount: this.selectedPackage.price,
+                        duration: this.selectedPackage.duration,
+                        mac: this.mac,
+                        ip: this.ip,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // Simulate payment processing (replace with actual GAS URL)
+                    setTimeout(() => {
+                        this.showSuccess('Payment successful! You are now being connected...');
+                        setTimeout(() => {
+                            window.location.href = 'http://192.168.100.1/redirect';
+                        }, 2000);
+                    }, 3000);
+
+                } catch (error) {
+                    this.showError('Network error. Please check your connection and try again.');
+                }
+            }
+
+            validatePhone(phone) {
+                const phoneRegex = /^07\d{8}$/;
+                return phoneRegex.test(phone);
+            }
+
+            showSuccess(message) {
+                document.querySelector('.payment-status').innerHTML = `
+                    <div class="status-message">
+                        <h3 style="color: #28a745;">Success!</h3>
+                        <p>${message}</p>
+                    </div>
+                `;
+            }
+
+            showError(message) {
+                document.querySelector('.payment-status').innerHTML = `
+                    <div class="status-message">
+                        <h3 style="color: #dc3545;">Error</h3>
+                        <p>${message}</p>
+                        <button onclick="location.reload()" class="btn-pay" style="background: #dc3545;">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        new WiFiBilling();
+    </script>
+</body>
+</html>
