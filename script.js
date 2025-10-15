@@ -104,7 +104,7 @@ class WiFiBilling {
     }
 
     async sendPaymentRequest(paymentData) {
-        const GAS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Replace with your GAS URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCnTrxmiPV1E_4G7ls_m06R5z0wJgRNAUX1Ekri14EGBASU8jeK91iON-WFMO-B40z/exec'; // Replace with your GAS URL
         
         const response = await fetch(GAS_URL, {
             method: 'POST',
@@ -125,7 +125,7 @@ class WiFiBilling {
             attempts++;
             
             try {
-                const GAS_STATUS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_STATUS_URL'; // Replace with your status endpoint
+                const GAS_STATUS_URL = 'https://script.google.com/macros/s/AKfycbyCnTrxmiPV1E_4G7ls_m06R5z0wJgRNAUX1Ekri14EGBASU8jeK91iON-WFMO-B40z/exec'; // Replace with your status endpoint
                 const response = await fetch(`${GAS_STATUS_URL}?transactionId=${transactionId}`);
                 const status = await response.json();
 
